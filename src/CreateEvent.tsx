@@ -2,7 +2,7 @@ import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, type DateObject } from 'react-multi-date-picker'
 import { createEvent } from './api'
-import { generateTimeSlots } from './utils'
+import { generateTimeSlots, convertSlotsToUtc } from './utils'
 
 interface FormState {
   name: string
@@ -52,11 +52,12 @@ export default function CreateEvent() {
     setLoading(true)
     setError(null)
     try {
+      const utc = convertSlotsToUtc(dates, timeSlots)
       const data = await createEvent({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        dates,
-        time_slots: timeSlots,
+        dates: utc.dates,
+        time_slots: utc.time_slots,
         creator_name: form.creatorName.trim() || undefined,
       })
       navigate(`/event/${data.id}`)

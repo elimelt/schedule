@@ -39,3 +39,33 @@ export const formatTimeLocal = (utcSlot: string): string =>
 export const formatSlotLocal = (utcSlot: string): string =>
   new Date(utcSlot).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
+export const localTimeToUtc = (date: string, time: string): { date: string; time: string } => {
+  const local = new Date(`${date}T${time}:00`)
+  const utcDate = local.toISOString().slice(0, 10)
+  const utcTime = local.toISOString().slice(11, 16)
+  return { date: utcDate, time: utcTime }
+}
+
+export const convertSlotsToUtc = (
+  dates: string[],
+  timeSlots: string[]
+): { dates: string[]; time_slots: string[] } => {
+  const utcSlots = new Map<string, Set<string>>()
+
+  for (const date of dates) {
+    for (const time of timeSlots) {
+      const utc = localTimeToUtc(date, time)
+      if (!utcSlots.has(utc.date)) utcSlots.set(utc.date, new Set())
+      utcSlots.get(utc.date)!.add(utc.time)
+    }
+  }
+
+  const allTimes = new Set<string>()
+  utcSlots.forEach((times) => times.forEach((t) => allTimes.add(t)))
+
+  return {
+    dates: [...utcSlots.keys()].sort(),
+    time_slots: [...allTimes].sort(),
+  }
+}
+
