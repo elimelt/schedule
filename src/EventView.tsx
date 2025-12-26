@@ -37,6 +37,14 @@ export default function EventView() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  useEffect(() => {
+    if (!data || !name.trim()) return
+    const existing = data.availabilities.find(
+      (a) => a.participant_name.toLowerCase() === name.trim().toLowerCase()
+    )
+    setSelected(new Set(existing?.available_slots ?? []))
+  }, [name, data])
+
   const toggleSlot = (slot: string) => {
     if (!name.trim()) return
     setSelected((prev) => {
@@ -144,7 +152,13 @@ export default function EventView() {
           <label>Password (optional)</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        {name.trim() && <p>Click cells above to select</p>}
+        {name.trim() && (
+          <p>
+            {availabilities.some((a) => a.participant_name.toLowerCase() === name.trim().toLowerCase())
+              ? 'Editing existing availability. Click cells to toggle.'
+              : 'Click cells above to select.'}
+          </p>
+        )}
         {selected.size > 0 && <p>Selected: {selected.size}</p>}
         {submitMsg && <div className={submitMsg.type}>{submitMsg.text}</div>}
         <button onClick={handleSubmit} disabled={submitting || !name.trim()}>
