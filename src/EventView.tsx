@@ -101,7 +101,7 @@ export default function EventView() {
       grid.removeEventListener('touchstart', handleTouchStart)
       grid.removeEventListener('touchmove', handleTouchMove)
     }
-  }, [])
+  }, [data])
 
   const handleSlotMouseDown = (slot: string) => {
     if (!name.trim()) return
