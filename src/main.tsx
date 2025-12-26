@@ -5,7 +5,7 @@ import CreateEvent from './CreateEvent'
 import EventView from './EventView'
 import './index.css'
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
@@ -15,3 +15,4 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>
 )
+

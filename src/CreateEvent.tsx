@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar } from 'react-multi-date-picker'
+import { Calendar, type DateObject } from 'react-multi-date-picker'
 import { createEvent } from './api'
 import { generateTimeSlots } from './utils'
 
+interface FormState {
+  name: string
+  description: string
+  creatorName: string
+  startTime: string
+  endTime: string
+  interval: number
+}
+
 export default function CreateEvent() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     name: '',
     description: '',
     creatorName: '',
@@ -14,28 +23,28 @@ export default function CreateEvent() {
     endTime: '17:00',
     interval: 30,
   })
-  const [dates, setDates] = useState([])
-  const [timeSlots, setTimeSlots] = useState([])
+  const [dates, setDates] = useState<string[]>([])
+  const [timeSlots, setTimeSlots] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const updateForm = (field) => (e) =>
+  const updateForm = (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }))
 
-  const handleDateChange = (selected) =>
+  const handleDateChange = (selected: DateObject[]) =>
     setDates(selected.map((d) => d.format('YYYY-MM-DD')).sort())
 
   const handleGenerateSlots = () =>
     setTimeSlots(generateTimeSlots(form.startTime, form.endTime, form.interval))
 
-  const validate = () => {
+  const validate = (): string | null => {
     if (!form.name.trim()) return 'Event name is required'
     if (!dates.length) return 'At least one date is required'
     if (!timeSlots.length) return 'Please generate time slots'
     return null
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const err = validate()
     if (err) return setError(err)
@@ -52,7 +61,7 @@ export default function CreateEvent() {
       })
       navigate(`/event/${data.id}`)
     } catch (e) {
-      setError(e.message)
+      setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
@@ -108,3 +117,4 @@ export default function CreateEvent() {
     </div>
   )
 }
+
