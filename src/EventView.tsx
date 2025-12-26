@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { getEvent, submitAvailability } from './api'
-import { getSlotColor } from './utils'
+import { getSlotColor, buildSlotId, formatDateLocal, formatTimeLocal } from './utils'
 import type { EventData } from './types'
 
 interface SubmitMessage {
@@ -128,40 +128,46 @@ export default function EventView() {
             <thead>
               <tr>
                 <th />
-                {event.dates.map((d) => <th key={d}>{d}</th>)}
+                {event.dates.map((d) => {
+                  const sampleSlot = buildSlotId(d, event.time_slots[0])
+                  return <th key={d}>{formatDateLocal(sampleSlot)}</th>
+                })}
               </tr>
             </thead>
             <tbody>
-              {event.time_slots.map((t) => (
-                <tr key={t}>
-                  <td>{t}</td>
-                  {event.dates.map((d) => {
-                    const slot = `${d} ${t}`
-                    const count = summary?.[slot] ?? 0
-                    const participants = getParticipants(slot)
-                    return (
-                      <td
-                        key={slot}
-                        className={`slot-cell${selected.has(slot) ? ' selected' : ''}${!name.trim() ? ' disabled' : ''}`}
-                        style={{ background: getSlotColor(count, total) }}
-                        onMouseDown={() => handleSlotMouseDown(slot)}
-                        onMouseEnter={() => handleSlotMouseEnter(slot)}
-                        onTouchStart={() => handleSlotMouseDown(slot)}
-                        onTouchMove={(e) => {
-                          const touch = e.touches[0]
-                          const el = document.elementFromPoint(touch.clientX, touch.clientY)
-                          const slotAttr = el?.getAttribute('data-slot')
-                          if (slotAttr) handleSlotMouseEnter(slotAttr)
-                        }}
-                        data-slot={slot}
-                        title={participants.join(', ') || 'None'}
-                      >
-                        {count}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
+              {event.time_slots.map((t) => {
+                const sampleSlot = buildSlotId(event.dates[0], t)
+                return (
+                  <tr key={t}>
+                    <td>{formatTimeLocal(sampleSlot)}</td>
+                    {event.dates.map((d) => {
+                      const slot = buildSlotId(d, t)
+                      const count = summary?.[slot] ?? 0
+                      const participants = getParticipants(slot)
+                      return (
+                        <td
+                          key={slot}
+                          className={`slot-cell${selected.has(slot) ? ' selected' : ''}${!name.trim() ? ' disabled' : ''}`}
+                          style={{ background: getSlotColor(count, total) }}
+                          onMouseDown={() => handleSlotMouseDown(slot)}
+                          onMouseEnter={() => handleSlotMouseEnter(slot)}
+                          onTouchStart={() => handleSlotMouseDown(slot)}
+                          onTouchMove={(e) => {
+                            const touch = e.touches[0]
+                            const el = document.elementFromPoint(touch.clientX, touch.clientY)
+                            const slotAttr = el?.getAttribute('data-slot')
+                            if (slotAttr) handleSlotMouseEnter(slotAttr)
+                          }}
+                          data-slot={slot}
+                          title={participants.join(', ') || 'None'}
+                        >
+                          {count}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
