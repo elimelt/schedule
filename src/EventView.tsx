@@ -71,19 +71,28 @@ export default function EventView() {
       return el?.getAttribute('data-slot') ?? null
     }
 
+    const applySlotUpdate = (slot: string) => {
+      setSelected((prev) => {
+        const next = new Set(prev)
+        dragMode.current === 'select' ? next.add(slot) : next.delete(slot)
+        return next
+      })
+      setSubmitMsg(null)
+    }
+
     const handleTouchStart = (e: TouchEvent) => {
       const slot = getSlotFromTouch(e.touches[0])
       if (!slot || !nameRef.current.trim()) return
       e.preventDefault()
       dragMode.current = selectedRef.current.has(slot) ? 'deselect' : 'select'
-      updateSlot(slot)
+      applySlotUpdate(slot)
     }
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!nameRef.current.trim() || !dragMode.current) return
       e.preventDefault()
       const slot = getSlotFromTouch(e.touches[0])
-      if (slot) updateSlot(slot)
+      if (slot) applySlotUpdate(slot)
     }
 
     grid.addEventListener('touchstart', handleTouchStart, { passive: false })
