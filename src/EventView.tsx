@@ -67,6 +67,22 @@ export default function EventView() {
     updateSlot(slot)
   }
 
+  const handleTouchStart = (e: React.TouchEvent, slot: string) => {
+    if (!name.trim()) return
+    e.preventDefault()
+    dragMode.current = selected.has(slot) ? 'deselect' : 'select'
+    updateSlot(slot)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!name.trim() || !dragMode.current) return
+    e.preventDefault()
+    const touch = e.touches[0]
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    const slotAttr = el?.getAttribute('data-slot')
+    if (slotAttr) updateSlot(slotAttr)
+  }
+
   const updateSlot = (slot: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
@@ -151,13 +167,8 @@ export default function EventView() {
                           style={{ background: getSlotColor(count, total) }}
                           onMouseDown={() => handleSlotMouseDown(slot)}
                           onMouseEnter={() => handleSlotMouseEnter(slot)}
-                          onTouchStart={() => handleSlotMouseDown(slot)}
-                          onTouchMove={(e) => {
-                            const touch = e.touches[0]
-                            const el = document.elementFromPoint(touch.clientX, touch.clientY)
-                            const slotAttr = el?.getAttribute('data-slot')
-                            if (slotAttr) handleSlotMouseEnter(slotAttr)
-                          }}
+                          onTouchStart={(e) => handleTouchStart(e, slot)}
+                          onTouchMove={handleTouchMove}
                           data-slot={slot}
                           title={participants.join(', ') || 'None'}
                         >
