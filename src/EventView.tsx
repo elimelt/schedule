@@ -20,6 +20,12 @@ export default function EventView() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<SubmitMessage | null>(null)
   const dragMode = useRef<'select' | 'deselect' | null>(null)
+  const gridRef = useRef<HTMLTableElement>(null)
+  const nameRef = useRef(name)
+  const selectedRef = useRef(selected)
+
+  useEffect(() => { nameRef.current = name }, [name])
+  useEffect(() => { selectedRef.current = selected }, [selected])
 
   const fetchData = useCallback(async () => {
     if (!eventId) return
@@ -56,6 +62,38 @@ export default function EventView() {
     }
   }, [])
 
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+
+    const getSlotFromTouch = (touch: Touch): string | null => {
+      const el = document.elementFromPoint(touch.clientX, touch.clientY)
+      return el?.getAttribute('data-slot') ?? null
+    }
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const slot = getSlotFromTouch(e.touches[0])
+      if (!slot || !nameRef.current.trim()) return
+      e.preventDefault()
+      dragMode.current = selectedRef.current.has(slot) ? 'deselect' : 'select'
+      updateSlot(slot)
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!nameRef.current.trim() || !dragMode.current) return
+      e.preventDefault()
+      const slot = getSlotFromTouch(e.touches[0])
+      if (slot) updateSlot(slot)
+    }
+
+    grid.addEventListener('touchstart', handleTouchStart, { passive: false })
+    grid.addEventListener('touchmove', handleTouchMove, { passive: false })
+    return () => {
+      grid.removeEventListener('touchstart', handleTouchStart)
+      grid.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [])
+
   const handleSlotMouseDown = (slot: string) => {
     if (!name.trim()) return
     dragMode.current = selected.has(slot) ? 'deselect' : 'select'
@@ -65,22 +103,6 @@ export default function EventView() {
   const handleSlotMouseEnter = (slot: string) => {
     if (!name.trim() || !dragMode.current) return
     updateSlot(slot)
-  }
-
-  const handleTouchStart = (e: React.TouchEvent, slot: string) => {
-    if (!name.trim()) return
-    e.preventDefault()
-    dragMode.current = selected.has(slot) ? 'deselect' : 'select'
-    updateSlot(slot)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!name.trim() || !dragMode.current) return
-    e.preventDefault()
-    const touch = e.touches[0]
-    const el = document.elementFromPoint(touch.clientX, touch.clientY)
-    const slotAttr = el?.getAttribute('data-slot')
-    if (slotAttr) updateSlot(slotAttr)
   }
 
   const updateSlot = (slot: string) => {
@@ -140,7 +162,7 @@ export default function EventView() {
           <span><span className="legend-box" style={{ background: '#44ff44' }} /> All ({total})</span>
         </div>
         <div className="availability-grid-wrapper">
-          <table className="availability-grid">
+          <table className="availability-grid" ref={gridRef}>
             <thead>
               <tr>
                 <th />
@@ -167,8 +189,6 @@ export default function EventView() {
                           style={{ background: getSlotColor(count, total) }}
                           onMouseDown={() => handleSlotMouseDown(slot)}
                           onMouseEnter={() => handleSlotMouseEnter(slot)}
-                          onTouchStart={(e) => handleTouchStart(e, slot)}
-                          onTouchMove={handleTouchMove}
                           data-slot={slot}
                           title={participants.join(', ') || 'None'}
                         >
