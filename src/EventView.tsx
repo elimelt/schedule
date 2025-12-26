@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { getEvent, submitAvailability } from './api'
 import { getSlotColor } from './utils'
@@ -19,6 +19,7 @@ export default function EventView() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<SubmitMessage | null>(null)
+  const dragMode = useRef<'select' | 'deselect' | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!eventId) return
@@ -45,11 +46,31 @@ export default function EventView() {
     setSelected(new Set(existing?.available_slots ?? []))
   }, [name, data])
 
-  const toggleSlot = (slot: string) => {
+  useEffect(() => {
+    const handleMouseUp = () => { dragMode.current = null }
+    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('touchend', handleMouseUp)
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('touchend', handleMouseUp)
+    }
+  }, [])
+
+  const handleSlotMouseDown = (slot: string) => {
     if (!name.trim()) return
+    dragMode.current = selected.has(slot) ? 'deselect' : 'select'
+    updateSlot(slot)
+  }
+
+  const handleSlotMouseEnter = (slot: string) => {
+    if (!name.trim() || !dragMode.current) return
+    updateSlot(slot)
+  }
+
+  const updateSlot = (slot: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      next.has(slot) ? next.delete(slot) : next.add(slot)
+      dragMode.current === 'select' ? next.add(slot) : next.delete(slot)
       return next
     })
     setSubmitMsg(null)
@@ -123,7 +144,16 @@ export default function EventView() {
                         key={slot}
                         className={`slot-cell${selected.has(slot) ? ' selected' : ''}${!name.trim() ? ' disabled' : ''}`}
                         style={{ background: getSlotColor(count, total) }}
-                        onClick={() => toggleSlot(slot)}
+                        onMouseDown={() => handleSlotMouseDown(slot)}
+                        onMouseEnter={() => handleSlotMouseEnter(slot)}
+                        onTouchStart={() => handleSlotMouseDown(slot)}
+                        onTouchMove={(e) => {
+                          const touch = e.touches[0]
+                          const el = document.elementFromPoint(touch.clientX, touch.clientY)
+                          const slotAttr = el?.getAttribute('data-slot')
+                          if (slotAttr) handleSlotMouseEnter(slotAttr)
+                        }}
+                        data-slot={slot}
                         title={participants.join(', ') || 'None'}
                       >
                         {count}
@@ -155,8 +185,8 @@ export default function EventView() {
         {name.trim() && (
           <p>
             {availabilities.some((a) => a.participant_name.toLowerCase() === name.trim().toLowerCase())
-              ? 'Editing existing availability. Click cells to toggle.'
-              : 'Click cells above to select.'}
+              ? 'Editing existing availability. Click or drag to toggle.'
+              : 'Click or drag on cells to select.'}
           </p>
         )}
         {selected.size > 0 && <p>Selected: {selected.size}</p>}
