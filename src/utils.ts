@@ -16,9 +16,9 @@ export const generateTimeSlots = (start: string, end: string, interval: number):
 }
 
 export const getSlotColor = (count: number, total: number): string => {
-  if (count === 0) return '#ff4444'
-  if (total > 0 && count === total) return '#44ff44'
-  return '#ffcc00'
+  if (count === 0) return '#ffcccc'
+  if (total > 0 && count === total) return '#99dd99'
+  return '#ffeeaa'
 }
 
 export const buildSlotId = (date: string, time: string): string =>

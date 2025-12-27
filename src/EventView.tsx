@@ -145,39 +145,54 @@ export default function EventView() {
   const getParticipants = (slot: string): string[] =>
     data?.availabilities?.filter((a) => a.available_slots.includes(slot)).map((a) => a.participant_name) ?? []
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div className="error">{error}</div>
+  if (loading) return <div role="status" aria-live="polite">Loading...</div>
+  if (error) return <div className="error" role="alert">{error}</div>
   if (!data) return null
 
   const { event, availabilities, summary } = data
   const total = availabilities?.length ?? 0
 
+  const toggleSlotKeyboard = (e: React.KeyboardEvent, slot: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      if (!name.trim()) return
+      setSelected((prev) => {
+        const next = new Set(prev)
+        next.has(slot) ? next.delete(slot) : next.add(slot)
+        return next
+      })
+      setSubmitMsg(null)
+    }
+  }
+
   return (
-    <div className="container">
+    <main className="container">
       <h1>{event.name}</h1>
       {event.description && <p>{event.description}</p>}
       {event.creator_name && <p>Created by: {event.creator_name}</p>}
 
       <div className="share-link-row">
-        <input readOnly value={window.location.href} />
-        <button onClick={() => navigator.clipboard.writeText(window.location.href)}>Copy</button>
+        <label htmlFor="share-url" className="sr-only">Event URL</label>
+        <input id="share-url" readOnly value={window.location.href} aria-describedby="copy-hint" />
+        <button onClick={() => navigator.clipboard.writeText(window.location.href)} aria-label="Copy event URL to clipboard">Copy</button>
+        <span id="copy-hint" className="sr-only">Click copy to copy the event URL</span>
       </div>
 
-      <div className="section">
-        <h3>Availability</h3>
-        <div className="legend">
-          <span><span className="legend-box" style={{ background: '#ff4444' }} /> None</span>
-          <span><span className="legend-box" style={{ background: '#ffcc00' }} /> Some</span>
-          <span><span className="legend-box" style={{ background: '#44ff44' }} /> All ({total})</span>
+      <section className="section" aria-labelledby="availability-heading">
+        <h2 id="availability-heading">Availability</h2>
+        <div className="legend" role="list" aria-label="Color legend">
+          <span role="listitem"><span className="legend-box" style={{ background: '#cc0000' }} aria-hidden="true" /> None available</span>
+          <span role="listitem"><span className="legend-box" style={{ background: '#cc9900' }} aria-hidden="true" /> Some available</span>
+          <span role="listitem"><span className="legend-box" style={{ background: '#228822' }} aria-hidden="true" /> All available ({total})</span>
         </div>
         <div className="availability-grid-wrapper">
-          <table className="availability-grid" ref={gridRef}>
+          <table className="availability-grid" ref={gridRef} role="grid" aria-label="Availability schedule grid">
             <thead>
               <tr>
-                <th />
+                <th scope="col"><span className="sr-only">Time</span></th>
                 {event.dates.map((d) => {
                   const sampleSlot = buildSlotId(d, event.time_slots[0])
-                  return <th key={d}>{formatDateLocal(sampleSlot)}</th>
+                  return <th key={d} scope="col">{formatDateLocal(sampleSlot)}</th>
                 })}
               </tr>
             </thead>
@@ -186,20 +201,27 @@ export default function EventView() {
                 const sampleSlot = buildSlotId(event.dates[0], t)
                 return (
                   <tr key={t}>
-                    <td>{formatTimeLocal(sampleSlot)}</td>
+                    <th scope="row">{formatTimeLocal(sampleSlot)}</th>
                     {event.dates.map((d) => {
                       const slot = buildSlotId(d, t)
                       const count = summary?.[slot] ?? 0
                       const participants = getParticipants(slot)
+                      const isSelected = selected.has(slot)
+                      const isDisabled = !name.trim()
                       return (
                         <td
                           key={slot}
-                          className={`slot-cell${selected.has(slot) ? ' selected' : ''}${!name.trim() ? ' disabled' : ''}`}
+                          className={`slot-cell${isSelected ? ' selected' : ''}${isDisabled ? ' disabled' : ''}`}
                           style={{ background: getSlotColor(count, total) }}
                           onMouseDown={() => handleSlotMouseDown(slot)}
                           onMouseEnter={() => handleSlotMouseEnter(slot)}
+                          onKeyDown={(e) => toggleSlotKeyboard(e, slot)}
                           data-slot={slot}
-                          title={participants.join(', ') || 'None'}
+                          tabIndex={isDisabled ? -1 : 0}
+                          role="gridcell"
+                          aria-selected={isSelected}
+                          aria-disabled={isDisabled}
+                          aria-label={`${formatDateLocal(slot)} ${formatTimeLocal(slot)}, ${count} of ${total} available${participants.length ? `: ${participants.join(', ')}` : ''}`}
                         >
                           {count}
                         </td>
@@ -212,36 +234,40 @@ export default function EventView() {
           </table>
         </div>
         {total > 0 && (
-          <div className="participant-list">
-            {availabilities.map((a) => <span key={a.participant_name}>{a.participant_name}</span>)}
+          <div className="participant-list" role="list" aria-label="Participants">
+            {availabilities.map((a) => <span key={a.participant_name} role="listitem">{a.participant_name}</span>)}
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="section">
-        <h3>Your Availability</h3>
+      <section className="section" aria-labelledby="your-availability-heading">
+        <h2 id="your-availability-heading">Your Availability</h2>
         <div className="form-group">
-          <label>Name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          <label htmlFor="participant-name">Name</label>
+          <input id="participant-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" aria-describedby="name-hint" />
+          <span id="name-hint" className="sr-only">Enter your name to enable slot selection</span>
         </div>
         <div className="form-group">
-          <label>Password (optional)</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label htmlFor="participant-password">Password (optional)</label>
+          <input id="participant-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} aria-describedby="password-hint" />
+          <span id="password-hint" className="sr-only">Optional password to protect your availability</span>
         </div>
         {name.trim() && (
-          <p>
+          <p aria-live="polite">
             {availabilities.some((a) => a.participant_name.toLowerCase() === name.trim().toLowerCase())
-              ? 'Editing existing availability. Click or drag to toggle.'
-              : 'Click or drag on cells to select.'}
+              ? 'Editing existing availability. Click, drag, or press Enter/Space to toggle.'
+              : 'Click, drag, or press Enter/Space on cells to select.'}
           </p>
         )}
-        {selected.size > 0 && <p>Selected: {selected.size}</p>}
-        {submitMsg && <div className={submitMsg.type}>{submitMsg.text}</div>}
-        <button onClick={handleSubmit} disabled={submitting || !name.trim()}>
+        {selected.size > 0 && <p aria-live="polite">Selected: {selected.size} time slots</p>}
+        <div aria-live="assertive">
+          {submitMsg && <div className={submitMsg.type} role="alert">{submitMsg.text}</div>}
+        </div>
+        <button onClick={handleSubmit} disabled={submitting || !name.trim()} aria-busy={submitting}>
           {submitting ? 'Saving...' : 'Save'}
         </button>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
 

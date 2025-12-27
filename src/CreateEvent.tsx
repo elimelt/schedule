@@ -69,36 +69,38 @@ export default function CreateEvent() {
   }
 
   return (
-    <div className="container">
+    <main className="container">
       <h1>Create Event</h1>
-      {error && <div className="error">{error}</div>}
-      <form onSubmit={handleSubmit}>
+      {error && <div className="error" role="alert">{error}</div>}
+      <form onSubmit={handleSubmit} aria-label="Create event form">
         <div className="form-group">
-          <label>Event Name *</label>
-          <input value={form.name} onChange={updateForm('name')} required />
+          <label htmlFor="event-name">Event Name *</label>
+          <input id="event-name" value={form.name} onChange={updateForm('name')} required aria-required="true" />
         </div>
         <div className="form-group">
-          <label>Description</label>
-          <textarea value={form.description} onChange={updateForm('description')} rows={3} />
+          <label htmlFor="event-desc">Description</label>
+          <textarea id="event-desc" value={form.description} onChange={updateForm('description')} rows={3} />
         </div>
         <div className="form-group">
-          <label>Your Name</label>
-          <input value={form.creatorName} onChange={updateForm('creatorName')} />
+          <label htmlFor="creator-name">Your Name</label>
+          <input id="creator-name" value={form.creatorName} onChange={updateForm('creatorName')} />
         </div>
         <div className="form-group">
-          <label>Dates ({dates.length} selected)</label>
-          <Calendar multiple format="YYYY-MM-DD" onChange={handleDateChange} />
+          <label id="dates-label">Dates ({dates.length} selected)</label>
+          <div aria-labelledby="dates-label">
+            <Calendar multiple format="YYYY-MM-DD" onChange={handleDateChange} />
+          </div>
         </div>
-        <div className="form-group">
-          <label>Time Slots</label>
+        <fieldset className="form-group">
+          <legend>Time Slots</legend>
           <div className="time-slot-row">
-            <input type="time" value={form.startTime} onChange={updateForm('startTime')} />
-            <span>to</span>
-            <input type="time" value={form.endTime} onChange={updateForm('endTime')} />
-            <select
-              value={form.interval}
-              onChange={(e) => setForm((f) => ({ ...f, interval: Number(e.target.value) }))}
-            >
+            <label htmlFor="start-time" className="sr-only">Start time</label>
+            <input id="start-time" type="time" value={form.startTime} onChange={updateForm('startTime')} aria-label="Start time" />
+            <span aria-hidden="true">to</span>
+            <label htmlFor="end-time" className="sr-only">End time</label>
+            <input id="end-time" type="time" value={form.endTime} onChange={updateForm('endTime')} aria-label="End time" />
+            <label htmlFor="interval" className="sr-only">Interval</label>
+            <select id="interval" value={form.interval} onChange={(e) => setForm((f) => ({ ...f, interval: Number(e.target.value) }))} aria-label="Time interval">
               <option value={15}>15 min</option>
               <option value={30}>30 min</option>
               <option value={60}>60 min</option>
@@ -106,16 +108,16 @@ export default function CreateEvent() {
             <button type="button" onClick={handleGenerateSlots}>Generate</button>
           </div>
           {timeSlots.length > 0 && (
-            <div className="time-slot-list">
-              {timeSlots.map((s) => <span key={s} className="time-tag">{s}</span>)}
+            <div className="time-slot-list" role="list" aria-label="Generated time slots">
+              {timeSlots.map((s) => <span key={s} className="time-tag" role="listitem">{s}</span>)}
             </div>
           )}
-        </div>
-        <button type="submit" disabled={loading}>
+        </fieldset>
+        <button type="submit" disabled={loading} aria-busy={loading}>
           {loading ? 'Creating...' : 'Create Event'}
         </button>
       </form>
-    </div>
+    </main>
   )
 }
 
