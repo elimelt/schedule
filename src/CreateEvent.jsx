@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const API_URL = 'https://schedule.elimelt.com/api/events'
+const API_URL = 'https://blink.tail8ab50a.ts.net:8443/w2m/events'
 
 function generateTimeSlots(startTime, endTime, intervalMinutes) {
   const slots = []

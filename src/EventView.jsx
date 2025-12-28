@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 
-const API_URL = 'https://schedule.elimelt.com/api/events'
+const API_URL = 'https://blink.tail8ab50a.ts.net:8443/w2m/events'
 
 function getSlotColor(count, totalParticipants) {
   if (count === 0) return '#ff4444'
