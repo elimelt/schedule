@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import DatePicker from 'react-multi-date-picker'
+import { Calendar } from 'react-multi-date-picker'
 
 const API_URL = 'https://blink.tail8ab50a.ts.net:8443/w2m/events'
 
@@ -138,18 +138,12 @@ function CreateEvent() {
         </div>
 
         <div className="form-group">
-          <label>Dates</label>
-          <DatePicker
+          <label>Dates ({dates.length} selected)</label>
+          <Calendar
             multiple
             format="YYYY-MM-DD"
             onChange={handleDateChange}
-            placeholder="Click to select dates"
           />
-          {dates.length > 0 && (
-            <div className="date-list">
-              Selected: {dates.join(', ')}
-            </div>
-          )}
         </div>
 
         <div className="form-group">
