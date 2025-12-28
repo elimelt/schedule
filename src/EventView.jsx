@@ -18,6 +18,7 @@ function EventView() {
   const [notFound, setNotFound] = useState(false)
   
   const [participantName, setParticipantName] = useState('')
+  const [password, setPassword] = useState('')
   const [selectedSlots, setSelectedSlots] = useState(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -72,27 +73,37 @@ function EventView() {
       setSubmitError('Please enter your name')
       return
     }
-    
+
     setSubmitting(true)
     setSubmitError(null)
     setSubmitSuccess(false)
-    
+
     try {
+      const body = {
+        participant_name: participantName.trim(),
+        available_slots: Array.from(selectedSlots),
+      }
+      if (password.trim()) {
+        body.password = password.trim()
+      }
+
       const response = await fetch(`${API_URL}/${eventId}/availability`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          participant_name: participantName.trim(),
-          available_slots: Array.from(selectedSlots),
-        }),
+        body: JSON.stringify(body),
       })
-      
+
+      if (response.status === 403) {
+        const data = await response.json()
+        throw new Error(data.detail || 'Password required or incorrect')
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to submit: ${response.status}`)
       }
-      
+
       setSubmitSuccess(true)
       await fetchEventData()
     } catch (err) {
@@ -229,6 +240,17 @@ function EventView() {
             value={participantName}
             onChange={(e) => setParticipantName(e.target.value)}
             placeholder="Enter your name to select time slots"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Password (optional)</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Protect your availability with a password"
           />
         </div>
 
