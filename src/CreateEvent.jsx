@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DatePicker from 'react-multi-date-picker'
 
 const API_URL = 'https://blink.tail8ab50a.ts.net:8443/w2m/events'
 
@@ -7,28 +8,27 @@ function generateTimeSlots(startTime, endTime, intervalMinutes) {
   const slots = []
   const [startHour, startMin] = startTime.split(':').map(Number)
   const [endHour, endMin] = endTime.split(':').map(Number)
-  
+
   let currentMinutes = startHour * 60 + startMin
   const endMinutes = endHour * 60 + endMin
-  
+
   while (currentMinutes <= endMinutes) {
     const hours = Math.floor(currentMinutes / 60)
     const mins = currentMinutes % 60
     slots.push(`${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`)
     currentMinutes += intervalMinutes
   }
-  
+
   return slots
 }
 
 function CreateEvent() {
   const navigate = useNavigate()
-  
+
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [creatorName, setCreatorName] = useState('')
   const [dates, setDates] = useState([])
-  const [currentDate, setCurrentDate] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [interval, setInterval] = useState(30)
@@ -36,15 +36,11 @@ function CreateEvent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleAddDate = () => {
-    if (currentDate && !dates.includes(currentDate)) {
-      setDates([...dates, currentDate].sort())
-      setCurrentDate('')
-    }
-  }
-
-  const handleRemoveDate = (dateToRemove) => {
-    setDates(dates.filter(d => d !== dateToRemove))
+  const handleDateChange = (selectedDates) => {
+    const formatted = selectedDates
+      .map(d => d.format('YYYY-MM-DD'))
+      .sort()
+    setDates(formatted)
   }
 
   const handleGenerateSlots = () => {
@@ -143,22 +139,15 @@ function CreateEvent() {
 
         <div className="form-group">
           <label>Dates</label>
-          <div className="date-input-row">
-            <input
-              type="date"
-              value={currentDate}
-              onChange={(e) => setCurrentDate(e.target.value)}
-            />
-            <button type="button" onClick={handleAddDate}>Add Date</button>
-          </div>
+          <DatePicker
+            multiple
+            format="YYYY-MM-DD"
+            onChange={handleDateChange}
+            placeholder="Click to select dates"
+          />
           {dates.length > 0 && (
             <div className="date-list">
-              {dates.map(date => (
-                <span key={date} className="date-tag">
-                  {date}
-                  <button type="button" onClick={() => handleRemoveDate(date)}>×</button>
-                </span>
-              ))}
+              Selected: {dates.join(', ')}
             </div>
           )}
         </div>
